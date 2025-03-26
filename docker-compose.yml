@@ -1,0 +1,68 @@
+services:
+  s3.services :
+    image: prakasitj/s3-mobile-service:latest
+    container_name: s3-mobile-service
+    ports:
+      - "9000:3000"
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_BUCKET=${AWS_BUCKET}
+      - AWS_ENDPOINT=${AWS_ENDPOINT}
+      - AWS_REGION=${AWS_DEFAULT_REGION}
+      - AWS_S3_FORCE_PATH_STYLE=${AWS_USE_PATH_STYLE_ENDPOINT}
+    networks:
+      - adoptme-network
+  frontend:
+    build:
+      context: ./AdoptMe-Frontend
+      dockerfile: Dockerfile
+    container_name: adoptme-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - DOMAIN=${DOMAIN}
+      - PHOTO=${PHOTO}
+      - PHOTODELETE=${PHOTODELETE}
+      - PHOTOPOST=${PHOTOPOST}
+      - PHOTO_KEY=${PHOTO_KEY}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - CHOKIDAR_USEPOLLING=true
+    networks:
+      - adoptme-network
+    volumes:
+      - ./AdoptMe-Frontend:/myapp
+    develop: 
+      watch:
+        - action: sync+restart
+          path: ./AdoptMe-Frontend
+          target: /myapp
+          ignore:
+            - node_modules
+    command: sh -c "bun install && bun run dev --host"
+  database:
+    build:
+      context: ./AdoptMe-Database
+      dockerfile: Dockerfile
+    container_name: adoptme-database
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    networks:
+      - adoptme-network 
+    volumes:
+      - ./AdoptMe-Database:/usr/src/app
+    command: sh -c "bunx prisma db push && bunx prisma generate && bun run dev"
+  adoptme-postgres:
+    image: postgres:16
+    container_name: adoptme-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=1234
+    networks:
+      - adoptme-network
+networks:
+  adoptme-network:
+    driver: bridge
