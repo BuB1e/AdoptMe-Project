@@ -15,7 +15,7 @@ services:
       - adoptme-network
   frontend:
     build:
-      context: ./AdoptMe-Frontend
+      context: ./AdoptMe-FrontEnd-Remix
       dockerfile: Dockerfile
     container_name: adoptme-frontend
     ports:
@@ -23,28 +23,22 @@ services:
     environment:
       - DOMAIN=${DOMAIN}
       - PHOTO=${PHOTO}
-      - PHOTODELETE=${PHOTODELETE}
-      - PHOTOPOST=${PHOTOPOST}
+      - PHOTOS3=${PHOTOS3}
+      - PHOTOS3POST=${PHOTOS3POST}
       - PHOTO_KEY=${PHOTO_KEY}
       - SESSION_SECRET=${SESSION_SECRET}
       - CHOKIDAR_USEPOLLING=true
     networks:
       - adoptme-network
     volumes:
-      - ./AdoptMe-Frontend:/myapp
-    develop: 
-      watch:
-        - action: sync+restart
-          path: ./AdoptMe-Frontend
-          target: /myapp
-          ignore:
-            - node_modules
+      - ./AdoptMe-FrontEnd-Remix:/myapp
+      - /myapp/node_modules
     command: sh -c "bun install && bun run dev --host"
-  database:
+  backend:
     build:
       context: ./AdoptMe-Database
       dockerfile: Dockerfile
-    container_name: adoptme-database
+    container_name: adoptme-backend
     ports:
       - "3000:3000"
     environment:
@@ -63,6 +57,10 @@ services:
       - POSTGRES_PASSWORD=1234
     networks:
       - adoptme-network
+    volumes:
+      - AdoptMe-Database:/var/lib/postgresql/data
 networks:
   adoptme-network:
     driver: bridge
+volumes:
+  AdoptMe-Database:
